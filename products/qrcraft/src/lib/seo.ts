@@ -1,4 +1,4 @@
-const defaultSiteUrl = "https://qrcraft-teal.vercel.app";
+const defaultSiteUrl = "https://qrcraft-five.vercel.app";
 
 export const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() || defaultSiteUrl;

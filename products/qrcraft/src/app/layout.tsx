@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import FeedbackWidget from "./components/FeedbackWidget";
 import {
@@ -62,6 +63,7 @@ export default function RootLayout({
         </Script>
         {children}
         <FeedbackWidget />
+        <Analytics />
       </body>
     </html>
   );
