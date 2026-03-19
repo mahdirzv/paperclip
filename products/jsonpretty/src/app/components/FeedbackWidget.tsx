@@ -18,13 +18,22 @@ export default function FeedbackWidget() {
       message: message.trim() || null,
       url: window.location.href,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
     };
 
-    // Store in localStorage for now (no backend yet)
-    const existing = JSON.parse(localStorage.getItem("feedback") || "[]");
-    existing.push(feedback);
-    localStorage.setItem("feedback", JSON.stringify(existing));
+    try {
+      let existing: unknown[] = [];
+      try {
+        const raw = localStorage.getItem("feedback");
+        const parsed = raw ? JSON.parse(raw) : [];
+        existing = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        existing = [];
+      }
+      existing.push(feedback);
+      localStorage.setItem("feedback", JSON.stringify(existing));
+    } catch {
+      // localStorage full or unavailable — feedback still shown as submitted
+    }
 
     setSubmitted(true);
     setTimeout(() => {
@@ -47,7 +56,7 @@ export default function FeedbackWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-xl p-4">
+    <div role="dialog" aria-label="Feedback" className="fixed bottom-4 right-4 z-50 w-72 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg shadow-xl p-4">
       {submitted ? (
         <div className="text-center py-4">
           <div className="text-lg mb-1">Thanks!</div>
@@ -59,6 +68,7 @@ export default function FeedbackWidget() {
             <span className="text-sm font-medium">How is this tool?</span>
             <button
               onClick={() => setIsOpen(false)}
+              aria-label="Close feedback"
               className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs"
             >
               &times;

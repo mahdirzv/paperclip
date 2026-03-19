@@ -56,13 +56,14 @@ export default function AboutPage() {
               </li>
             </ul>
 
-            <h2 className="text-xl font-semibold text-[var(--text-primary)] pt-4">
+            <h2 id="privacy" className="text-xl font-semibold text-[var(--text-primary)] pt-4">
               Privacy first
             </h2>
             <p>
               All processing happens client-side in your browser. JSONPretty never sends your
-              data anywhere. There are no accounts, no tracking cookies, and no analytics that
-              capture your input. Your JSON stays on your machine.
+              data anywhere. There are no accounts, and no tracking that captures your JSON
+              input. Basic aggregate traffic analytics may be used to understand overall usage.
+              Your JSON stays on your machine.
             </p>
 
             <h2 className="text-xl font-semibold text-[var(--text-primary)] pt-4">

@@ -20,6 +20,38 @@ describe("formatJson", () => {
   it("throws on invalid JSON", () => {
     expect(() => formatJson("{invalid}")).toThrow();
   });
+
+  it("formats deeply nested objects", () => {
+    const nested = {
+      level1: {
+        level2: {
+          level3: {
+            level4: {
+              value: "done",
+            },
+          },
+        },
+      },
+    };
+
+    const result = formatJson(JSON.stringify(nested));
+    expect(result).toContain('"level4": {');
+    expect(result).toContain('"value": "done"');
+  });
+
+  it("formats large JSON payloads", () => {
+    const payload = {
+      items: Array.from({ length: 1000 }, (_, index) => ({
+        id: index,
+        name: `item-${index}`,
+        active: index % 2 === 0,
+      })),
+    };
+
+    const result = formatJson(JSON.stringify(payload));
+    expect(result).toContain('"items": [');
+    expect(result).toContain('"id": 999');
+  });
 });
 
 describe("minifyJson", () => {
@@ -31,6 +63,24 @@ describe("minifyJson", () => {
   it("handles arrays", () => {
     const result = minifyJson('[1, 2, 3]');
     expect(result).toBe("[1,2,3]");
+  });
+
+  it("minifies large multi-line JSON payloads", () => {
+    const source = JSON.stringify(
+      {
+        records: Array.from({ length: 250 }, (_, index) => ({
+          index,
+          tags: ["alpha", "beta", "gamma"],
+          nested: { enabled: true, score: index / 10 },
+        })),
+      },
+      null,
+      2,
+    );
+
+    const result = minifyJson(source);
+    expect(result).not.toContain("\n");
+    expect(result).toContain('"index":249');
   });
 });
 
@@ -60,13 +110,24 @@ describe("validateJson", () => {
     const result = validateJson('{"a":1,}');
     expect(result.valid).toBe(false);
   });
+
+  it("returns error for malformed large JSON", () => {
+    const validPrefix = JSON.stringify({
+      rows: Array.from({ length: 600 }, (_, index) => ({ id: index, value: `v-${index}` })),
+    });
+    const malformed = `${validPrefix.slice(0, -1)},`;
+
+    const result = validateJson(malformed);
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+  });
 });
 
 describe("jsonToYaml", () => {
   it("converts simple object", () => {
     const result = jsonToYaml({ name: "test", version: "1.0" });
     expect(result).toContain("name: test");
-    expect(result).toContain("version: 1.0");
+    expect(result).toContain('version: "1.0"');
   });
 
   it("converts arrays", () => {
@@ -108,5 +169,23 @@ describe("jsonToYaml", () => {
     const result = jsonToYaml({ outer: { inner: "value" } });
     expect(result).toContain("outer:");
     expect(result).toContain("inner: value");
+  });
+
+  it("handles deeply nested mixed structures", () => {
+    const input = {
+      service: {
+        name: "jsonpretty",
+        environments: [
+          { name: "dev", flags: { beta: true } },
+          { name: "prod", flags: { beta: false } },
+        ],
+      },
+    };
+
+    const result = jsonToYaml(input);
+    expect(result).toContain("service:");
+    expect(result).toContain("environments:");
+    expect(result).toContain("- name: dev");
+    expect(result).toContain("beta: false");
   });
 });

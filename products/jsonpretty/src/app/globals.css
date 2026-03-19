@@ -63,9 +63,14 @@ textarea {
   color: var(--text-primary);
 }
 
-.btn:hover {
+.btn:hover:not(:disabled) {
   background: var(--bg-secondary);
   border-color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .btn-primary {
@@ -101,7 +106,7 @@ textarea {
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-  animation: slideIn 0.2s ease-out, fadeOut 0.3s ease-in 1.7s forwards;
+  animation: slideIn 0.2s ease-out, fadeOut 0.3s ease-in 1.5s forwards;
   z-index: 100;
 }
 

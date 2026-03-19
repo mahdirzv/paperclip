@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, type FormEvent } from "react";
 import { jsonToYaml, formatJson, minifyJson, validateJson } from "@/lib/json-utils";
+import { featureCards, footerLinks, proFeatureList } from "@/lib/marketing-content";
 
 type Mode = "format" | "minify" | "validate" | "yaml";
 type Toast = { message: string; type: "success" | "error" } | null;
@@ -36,6 +37,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast>(null);
   const [indentSize, setIndentSize] = useState(2);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
 
   const showToast = useCallback((message: string, type: "success" | "error") => {
     setToast({ message, type });
@@ -69,7 +71,7 @@ export default function Home() {
             break;
         }
       } else {
-        const msg = validation.error!;
+        const msg = validation.error ?? "Invalid JSON";
         setError(msg);
 
         if (currentMode === "validate") {
@@ -137,6 +139,40 @@ export default function Home() {
   const handleSample = useCallback(() => {
     setInput(SAMPLE_JSON);
   }, []);
+
+  const handleWaitlistSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const normalizedEmail = waitlistEmail.trim().toLowerCase();
+
+      if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        showToast("Enter a valid email to join the waitlist", "error");
+        return;
+      }
+
+      try {
+        const storageKey = "jsonpretty:pro-waitlist";
+        const existing = localStorage.getItem(storageKey);
+        let savedEmails: string[] = [];
+        try {
+          const parsed = existing ? JSON.parse(existing) : [];
+          savedEmails = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          savedEmails = [];
+        }
+        if (!savedEmails.includes(normalizedEmail)) {
+          savedEmails.push(normalizedEmail);
+          localStorage.setItem(storageKey, JSON.stringify(savedEmails));
+        }
+
+        setWaitlistEmail("");
+        showToast("You’re on the waitlist — we’ll email launch updates", "success");
+      } catch {
+        showToast("Could not save waitlist signup", "error");
+      }
+    },
+    [waitlistEmail, showToast]
+  );
 
   const modes: { key: Mode; label: string; desc: string }[] = [
     { key: "format", label: "Format", desc: "Beautify JSON with indentation" },
@@ -207,7 +243,7 @@ export default function Home() {
       </div>
 
       {/* Editor */}
-      <main className="flex-1 px-4 sm:px-6 py-4">
+      <main className="flex-1 px-4 sm:px-6 py-4 space-y-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[calc(100vh-180px)]">
           {/* Input */}
           <div className="flex flex-col gap-2">
@@ -227,6 +263,7 @@ export default function Home() {
               spellCheck={false}
               autoComplete="off"
               autoCorrect="off"
+              aria-invalid={!!error}
               rows={14}
             />
           </div>
@@ -268,27 +305,93 @@ export default function Home() {
               rows={14}
             />
             {error && mode !== "validate" && (
-              <div className="text-xs text-[var(--error)] bg-[var(--error)]/10 px-3 py-2 rounded-md">
+              <div role="alert" className="text-xs text-[var(--error)] bg-[var(--error)]/10 px-3 py-2 rounded-md">
                 {error}
               </div>
             )}
           </div>
         </div>
+
+        <section className="max-w-7xl mx-auto border border-[var(--border)] rounded-xl bg-[var(--bg-secondary)] p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
+            What JSONPretty does
+          </h2>
+          <p className="text-sm text-[var(--text-secondary)] mt-3 leading-6 max-w-4xl">
+            JSONPretty helps developers inspect and clean JSON in seconds. Paste any payload,
+            switch modes instantly, and copy or download the result without leaving the browser.
+            Everything runs locally, so sensitive data never gets uploaded.
+          </p>
+        </section>
+
+        <section className="max-w-7xl mx-auto">
+          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {featureCards.map((feature) => (
+              <article
+                key={feature.title}
+                className="border border-[var(--border)] rounded-xl bg-[var(--bg-secondary)] p-5"
+              >
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">{feature.title}</h3>
+                <p className="text-sm text-[var(--text-secondary)] mt-2 leading-6">
+                  {feature.description}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="pro-waitlist"
+          className="max-w-7xl mx-auto border border-[var(--accent)]/35 rounded-xl bg-[var(--bg-secondary)] p-6 sm:p-8"
+        >
+          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">JSONPretty Pro (Coming Soon)</h2>
+          <p className="text-sm text-[var(--text-secondary)] mt-3 leading-6 max-w-4xl">
+            We’re planning a Pro tier for teams working with larger payloads and stricter
+            validation needs. Join the waitlist for launch updates.
+          </p>
+          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-[var(--text-secondary)]">
+            {proFeatureList.map((feature) => (
+              <li key={feature}>• {feature}</li>
+            ))}
+          </ul>
+
+          <form className="mt-6 flex flex-col sm:flex-row gap-3" onSubmit={handleWaitlistSubmit}>
+            <input
+              type="email"
+              value={waitlistEmail}
+              onChange={(event) => setWaitlistEmail(event.target.value)}
+              placeholder="you@company.com"
+              className="editor-area w-full sm:max-w-sm px-4 py-2"
+              aria-label="Email address"
+              required
+            />
+            <button type="submit" className="btn active">
+              Join Pro waitlist
+            </button>
+          </form>
+          <p className="text-xs text-[var(--text-secondary)] mt-2">
+            Waitlist signups are stored only in your browser in this version.
+          </p>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
+      <footer className="border-t border-[var(--border)] px-6 py-5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3 text-xs text-[var(--text-secondary)]">
           <span>JSONPretty &mdash; Free, fast, private JSON tools</span>
-          <div className="flex items-center gap-3">
-            <a href="/about" className="hover:text-[var(--text-primary)]">About</a>
-            <span>All processing happens in your browser. Zero data collection.</span>
+          <div className="flex items-center gap-4 flex-wrap">
+            {footerLinks.map((link) => (
+              <a key={link.href} href={link.href} className="hover:text-[var(--text-primary)]">
+                {link.label}
+              </a>
+            ))}
+            <span>All processing happens in your browser.</span>
           </div>
         </div>
       </footer>
 
       {/* Toast */}
-      {toast && <div className={`toast toast-${toast.type}`}>{toast.message}</div>}
+      {toast && <div role="alert" aria-live="polite" className={`toast toast-${toast.type}`}>{toast.message}</div>}
     </div>
   );
 }

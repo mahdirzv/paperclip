@@ -5,13 +5,28 @@ export function jsonToYaml(obj: unknown, indent = 0): string {
   if (typeof obj === "number") return obj.toString();
   if (typeof obj === "string") {
     if (
+      obj === "" ||
       obj.includes("\n") ||
       obj.includes(": ") ||
       obj.includes("#") ||
       obj.startsWith("{") ||
-      obj.startsWith("[")
+      obj.startsWith("[") ||
+      obj.startsWith("'") ||
+      obj.startsWith('"') ||
+      obj.startsWith("&") ||
+      obj.startsWith("*") ||
+      obj.startsWith("!") ||
+      obj.startsWith("%") ||
+      obj.startsWith("@") ||
+      obj.startsWith("`") ||
+      obj.startsWith(",") ||
+      obj.includes(": ") ||
+      obj.includes(" #") ||
+      /^(true|false|null|yes|no|on|off)$/i.test(obj) ||
+      /^[-+]?(\d+\.?\d*|\.?\d+)([eE][-+]?\d+)?$/.test(obj) ||
+      /^0[xXoObB]/.test(obj)
     ) {
-      return `"${obj.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+      return `"${obj.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n")}"`;
     }
     return obj;
   }
